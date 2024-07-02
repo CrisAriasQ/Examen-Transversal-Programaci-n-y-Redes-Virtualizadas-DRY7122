@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Validar Usuario</title>
+</head>
+<body>
+    <h1>Validar Usuario</h1>
+    <form method="POST" action="{{ url_for('validar_usuario') }}">
+        Nombre de Usuario: <input type="text" name="nombre" required><br>
+        Contraseña: <input type="password" name="contraseña" required><br>
+        <button type="submit">Validar</button>
+    </form>
+    <a href="{{ url_for('index') }}">Volver</a>
+</body>
+</html>
