@@ -5,12 +5,28 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Usuarios</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .user-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .user-item {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        .user-item:last-child {
+            border-bottom: none;
+        }
+    </style>
 </head>
 <body>
-    <h1>Lista de Usuarios Registrados</h1>
-    <ul>
+    <h1>Lista de Usuarios</h1>
+    <ul class="user-list">
         {% for usuario in usuarios %}
-        <li>Usuario: {{ usuario.nombre }}</li>
+            <li class="user-item">Usuario: {{ usuario.nombre }}</li>
         {% endfor %}
     </ul>
 </body>
