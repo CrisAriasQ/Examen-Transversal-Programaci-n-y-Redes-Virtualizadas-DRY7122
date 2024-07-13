@@ -8,12 +8,15 @@
 </head>
 <body>
     <h1>Registro de Nuevo Usuario</h1>
-    <form method="POST" action="/registrar">
+    <form method="POST" action="/registro">
         <label for="nombre">Nombre de Usuario:</label>
         <input type="text" id="nombre" name="nombre" required>
         <br>
         <label for="contraseña">Contraseña:</label>
         <input type="password" id="contraseña" name="contraseña" required>
+        <br>
+        <label for="confirmar_contraseña">Confirmar Contraseña:</label>
+        <input type="password" id="confirmar_contraseña" name="confirmar_contraseña" required>
         <br>
         <button type="submit">Registrar</button>
     </form>
