@@ -1,11 +1,9 @@
 import requests
 from opencage.geocoder import OpenCageGeocode
 
-# Claves API
 api_key_graphhopper = '64b48f33-ba36-4363-b401-3f7531aa1103'
 api_key_opencage = 'fabc278e50cb4a5093c8e9219b99a534'
 
-# Inicializa el geolocalizador de OpenCage
 geocoder = OpenCageGeocode(api_key_opencage)
 
 def get_coordinates_and_country(city_name):
