@@ -1,93 +1,82 @@
-from geopy.geocoders import Nominatim
-from geopy.distance import distance
+import requests
+from opencage.geocoder import OpenCageGeocode
 
-def obtener_coordenadas(ciudad, pais):
-    geolocator = Nominatim(user_agent="mi_app_geopy")
-    location = geolocator.geocode(f"{ciudad}, {pais}")
-    if location:
-        return (location.latitude, location.longitude)
+# Claves API
+api_key_graphhopper = '64b48f33-ba36-4363-b401-3f7531aa1103'
+api_key_opencage = 'fabc278e50cb4a5093c8e9219b99a534'
+
+# Inicializa el geolocalizador de OpenCage
+geocoder = OpenCageGeocode(api_key_opencage)
+
+def get_coordinates_and_country(city_name):
+    result = geocoder.geocode(city_name)
+    if result:
+        location = result[0]
+        return (location['geometry']['lat'], location['geometry']['lng'], location['components']['country'])
     else:
         return None
 
-def calcular_distancia(ciudad_origen, pais_origen, ciudad_destino, pais_destino):
-    coords_origen = obtener_coordenadas(ciudad_origen, pais_origen)
-    coords_destino = obtener_coordenadas(ciudad_destino, pais_destino)
-    
-    if coords_origen and coords_destino:
-        dist_millas = distance(coords_origen, coords_destino).miles
-        return dist_millas
-    else:
-        return None
-
-def millas_a_kilometros(millas):
-    return millas * 1.60934
-
-def calcular_duracion_viaje(distancia, velocidad_promedio_coche):
-    tiempo_horas = distancia / velocidad_promedio_coche
-    horas = int(tiempo_horas)
-    minutos = int((tiempo_horas - horas) * 60)
-    return horas, minutos
-
-def obtener_narrativa(ciudad_origen, ciudad_destino, distancia, duracion_horas, duracion_minutos, medio_transporte):
-    if medio_transporte.lower() == 'coche':
-        medio = "coche"
-    elif medio_transporte.lower() == 'avion':
-        medio = "avión"
-    else:
-        medio = "medio de transporte"
-        
-    narrativa = f"Viajando desde {ciudad_origen} a {ciudad_destino}, que están a aproximadamente {distancia:.2f} millas de distancia en {medio}.\n"
-    narrativa += f"El viaje tomaría aproximadamente {duracion_horas} horas y {duracion_minutos} minutos."
-    return narrativa
+def get_route(start, end, vehicle):
+    url = f"https://graphhopper.com/api/1/route"
+    params = {
+        "point": [f"{start[0]},{start[1]}", f"{end[0]},{end[1]}"],
+        "vehicle": vehicle,
+        "locale": "es",
+        "calc_points": True,
+        "key": api_key_graphhopper
+    }
+    response = requests.get(url, params=params)
+    return response
 
 def main():
     while True:
-        ciudad_origen = input("Ingrese la ciudad de origen (en español): ")
-        if ciudad_origen.lower() == 's':
-            break
-        
-        pais_origen = input("Ingrese el país de origen (en español): ")
-        
-        ciudad_destino = input("Ingrese la ciudad de destino (en español): ")
-        if ciudad_destino.lower() == 's':
-            break
-        
-        pais_destino = input("Ingrese el país de destino (en español): ")
-        
-        medio_transporte = input("Ingrese el tipo de medio de transporte (coche/avion): ")
-        
-        distancia_millas = calcular_distancia(ciudad_origen, pais_origen, ciudad_destino, pais_destino)
-        
-        if distancia_millas is None:
-            print("No se pudo calcular la distancia. Verifique las ciudades ingresadas.")
+        city1 = input("Ingrese la Ciudad de Origen: ")
+        city2 = input("Ingrese la Ciudad de Destino: ")
+
+        start_location = get_coordinates_and_country(city1)
+        end_location = get_coordinates_and_country(city2)
+
+        if start_location is None or end_location is None:
+            print("No se pudieron obtener las coordenadas de una o ambas ciudades. Verifique los nombres e inténtelo de nuevo.")
             continue
-        
-        distancia_km = millas_a_kilometros(distancia_millas)
-        
-        if medio_transporte.lower() == 'coche':
-            velocidad_promedio_coche = 60  # millas por hora
-            duracion_horas, duracion_minutos = calcular_duracion_viaje(distancia_millas, velocidad_promedio_coche)
-        
-        elif medio_transporte.lower() == 'avion':
-            velocidad_promedio_avion = 800  # kilómetros por hora (ejemplo)
-            duracion_horas, duracion_minutos = calcular_duracion_viaje(distancia_km, velocidad_promedio_avion)
-        
+
+        print(f"\nCiudad de Origen: {city1}, País: {start_location[2]}")
+        print(f"Ciudad de Destino: {city2}, País: {end_location[2]}")
+
+        modes_of_transport = {
+            "1": "car",
+            "2": "foot"
+        }
+
+        print("\nSeleccione el medio de transporte:")
+        print("1. Auto")
+        print("2. Caminando")
+        transport_choice = input("Ingrese el número correspondiente: ")
+        vehicle = modes_of_transport.get(transport_choice)
+
+        if vehicle is None:
+            print("Opción no válida. Inténtelo de nuevo.")
+            continue
+
+        route_response = get_route(start_location, end_location, vehicle)
+        if route_response.ok:
+            route_info = route_response.json()
+            distance_km = route_info['paths'][0]['distance'] / 1000
+            distance_miles = distance_km * 0.621371
+            time_hours = route_info['paths'][0]['time'] / 3600000
+
+            print(f"\nDistancia: {distance_km:.2f} km ({distance_miles:.2f} millas)")
+            print(f"Duración del viaje: {time_hours:.2f} horas")
+            print(f"\nNarrativa del viaje: Desde {city1} a {city2} en {vehicle.capitalize()}.")
+
         else:
-            print("Tipo de medio de transporte no válido.")
-            continue
-        
-        print(f"\nDistancia entre {ciudad_origen}, {pais_origen} y {ciudad_destino}, {pais_destino}:")
-        print(f"- Millas: {distancia_millas:.2f} mi")
-        print(f"- Kilómetros: {distancia_km:.2f} km")
-        print(f"Duración del viaje en {medio_transporte}: {duracion_horas} horas y {duracion_minutos} minutos.")
-        
-        narrativa = obtener_narrativa(ciudad_origen, ciudad_destino, distancia_millas, duracion_horas, duracion_minutos, medio_transporte)
-        print("\nNarrativa del viaje:")
-        print(narrativa)
-        
-        opcion_salir = input("\n¿Desea salir? (s/n): ")
-        if opcion_salir.lower() == 's':
+            print(f"\nFallo al obtener la ruta - {route_response.status_code}")
+            print(f"Mensaje de error: {route_response.text}")
+
+        salir = input("\n¿Desea salir? (s para salir, cualquier otra tecla para continuar): ")
+        if salir.lower() == 's':
             break
 
 if __name__ == "__main__":
     main()
+
